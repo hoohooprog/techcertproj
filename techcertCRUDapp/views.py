@@ -14,11 +14,11 @@ def index(request):
     return render(request,'techcertCRUDapp/index.html')
 
 
-def login(request):
-    return render(request, 'techcertCRUDapp/login.html')
+def loginmessage(request):
+    return render(request, 'techcertCRUDapp/loginmessage.html')
 
-def logout(request):
-    return render(request, 'techcertCRUDapp/logout.html')
+def logoutmessage(request):
+    return render(request, 'techcertCRUDapp/logoutmessage.html')
 
 @login_required
 def person_list(request):

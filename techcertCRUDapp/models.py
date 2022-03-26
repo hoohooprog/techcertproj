@@ -13,7 +13,7 @@
 # have yet to separate data into different apps based on the categories they are in
  
 from django.db import models
-
+from django.contrib.auth.models import User
 
 class Attendance(models.Model):
     attendencekey = models.AutoField(primary_key=True)
