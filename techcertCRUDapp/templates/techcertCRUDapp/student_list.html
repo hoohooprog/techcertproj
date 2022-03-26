@@ -1,0 +1,34 @@
+<!-- points to a base html template called 'base.html', exports following block content pertaining
+    to Meetings.html and combines it with base.html to present as Meetings.html -->
+    {% extends 'base.html' %}
+    {% block content %}
+    <h1>Student list</h1>
+    <table class='table'>
+     <tr>
+         <th>student id</th>
+         <th>person id</th>
+         <th>student start date</th>
+         <th>status key</th>
+     </tr>
+    
+     <!-- dict var Meetings_list: contains Meeting entities which in turn has their own attributes
+        according to stated model features.
+         a loop in template tag to iterate through dict var Meetings_list using iterator and prints feature details
+        of every entity contained in list into table
+        -->
+     {% for t in student_list %}
+       <tr>
+           <!-- syntax for accessing entity features: {{ iterator.featureName }} -->
+           <td>{{ t.studentkey }}</td>
+           <td>{{ t.personkey }}</td>
+           <td>{{ t.studentstartdate }}</td>
+           <td>{{ t.statuskey }}</td> 
+       </tr>
+    
+     {% endfor %}
+    
+    
+    </table>
+    
+    
+    {% endblock %}
