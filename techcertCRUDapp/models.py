@@ -287,6 +287,7 @@ class Person(models.Model):
     class Meta:
         managed = False
         db_table = 'person'
+    
 
 
 class Pricehistory(models.Model):
@@ -319,7 +320,8 @@ class Roster(models.Model):
     class Meta:
         managed = False
         db_table = 'roster'
-
+    
+    
 
 class Seminar(models.Model):
     seminarkey = models.AutoField(primary_key=True)
@@ -365,6 +367,8 @@ class Student(models.Model):
         managed = False
         db_table = 'student'
 
+"""
+unknown table, weird feature inputs, maybe it's an exercise. Also, empty.
 
 class Substitution(models.Model):
     substitutionkey = models.AutoField(primary_key=True)
@@ -377,3 +381,4 @@ class Substitution(models.Model):
     class Meta:
         managed = False
         db_table = 'substitution'
+"""
