@@ -1,4 +1,46 @@
-{% extends 'base.html' %} 
-{% block content %} 
-
-{% endblock %} 
+<!-- points to a base html template called 'base.html', exports following block content pertaining
+    to Meetings.html and combines it with base.html to present as Meetings.html -->
+    {% extends 'base.html' %}
+    {% block content %}
+    <h1>Person list</h1>
+    <table class='table'>
+     <tr>
+         <th>id</th>
+         <th>last name</th>
+         <th>email</th>
+         <th>address</th>
+         <th>city</th>
+         <th>state</th>
+         <th>postalcode</th>
+         <th>phone</th>
+         <th>date added</th>
+         <td>subscribed to newsletter</td>
+     </tr>
+    
+     <!-- dict var Meetings_list: contains Meeting entities which in turn has their own attributes
+        according to stated model features.
+         a loop in template tag to iterate through dict var Meetings_list using iterator and prints feature details
+        of every entity contained in list into table
+        -->
+     {% for t in person_list %}
+       <tr>
+           <!-- syntax for accessing entity features: {{ iterator.featureName }} -->
+           <td>{{ t.personkey }}</td>
+           <td>{{ t.lastname }}</td>
+           <td>{{ t.email }}</td>
+           <td>{{ t.address }}</td>
+           <td>{{ t.city }}</td>
+           <td>{{ t.state }}</td>
+           <td>{{ t.postalcode }}</td>
+           <td>{{ t.phone }}</td>
+           <td>{{ t.dateadded }}</td>
+           <td>{{ t.newsletter }}</td>
+       </tr>
+    
+     {% endfor %}
+    
+    
+    </table>
+    
+    
+    {% endblock %}

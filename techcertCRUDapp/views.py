@@ -11,22 +11,28 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 def index(request):
 
-    return render(request,'index.html')
+    return render(request,'techcertCRUDapp/index.html')
 
 
 def login(request):
-    return render(request, 'login.html')
+    return render(request, 'techcertCRUDapp/login.html')
 
 def logout(request):
-    return render(request, 'logout.html')
+    return render(request, 'techcertCRUDapp/logout.html')
 
 @login_required
 def person_list(request):
-    return render(request, 'person_list.html')
+    
+    # get all instances of objects type Person & assign 
+    # to person_list query set
+    person_list =Person.objects.all()
+
+    # render person_list.html with context = person_list
+    return render(request, 'techcertCRUDapp/person_list.html', {'person_list': person_list})
 
 @login_required
 def student_list(request):
-    return render(request, 'student_list.html')
+    return render(request, 'techcertCRUDapp/student_list.html')
 
 
 # decorator
@@ -43,4 +49,4 @@ def person_form(request):
             form=PersonForm()
     else:
         form=PersonForm()
-    return render(request, 'nperson_form.html',{'form':form})
+    return render(request, 'techcertCRUDapp/person_form.html',{'form':form})
