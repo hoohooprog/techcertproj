@@ -74,6 +74,7 @@ class IndexTest(TestCase):
 
 
 # https://stackoverflow.com/questions/30897442/django-1-8-fails-to-django-db-utils-programmingerror-relation-auth-user-does
+# https://stackoverflow.com/questions/23925726/django-relation-django-site-does-not-exist?noredirect=1&lq=1
 class PersonForm_Test(TestCase):
     def test_form_is_valid(self):
         form=PersonForm(data={'lastname': "tay", 'firstname':"J",'email':"tjingyi@ucsd.edu",'address':"capitol hill", 'city':"seattle",'state':"WA",'postalcode':"98122",

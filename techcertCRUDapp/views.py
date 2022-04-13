@@ -30,11 +30,11 @@ def person_list(request):
     # render person_list.html with context = person_list
     return render(request, 'techcertCRUDapp/person_list.html', {'person_list': person_list})
 
-#@login_required
-#def student_list(request):
+@login_required
+def student_list(request):
 
- #   student_list = Student.objects.all()
- #   return render(request, 'techcertCRUDapp/student_list.html', {'student_list': student_list})
+  student_list = Student.objects.all()
+  return render(request, 'techcertCRUDapp/student_list.html', {'student_list': student_list})
 
 
 # decorator

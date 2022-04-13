@@ -284,6 +284,9 @@ class Person(models.Model):
     dateadded = models.DateField(blank=True, null=True)
     newsletter = models.BooleanField(blank=True, null=True)
 
+    def __str__(self):
+        return '%s' % (self.personkey)
+
     class Meta:
         managed = False
         db_table = 'person'
@@ -351,6 +354,9 @@ class Seminardetails(models.Model):
 class Status(models.Model):
     statuskey = models.AutoField(primary_key=True)
     statusname = models.TextField()
+
+    def __str__(self):
+        return '%s' % (self.statusname)
 
     class Meta:
         managed = False
