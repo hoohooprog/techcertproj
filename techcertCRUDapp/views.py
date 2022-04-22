@@ -1,3 +1,6 @@
+# https://docs.djangoproject.com/en/4.0/topics/db/queries/#making-queries
+# using ORM chain filters based on altered form fields, considering spanning relationships, 
+# ie joins, retrieving data using Manager into queryset
 
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
@@ -42,30 +45,55 @@ def admin_person_query_ret(request):
         form = AdminQueryForm(request.POST)
 
         # if the fields are valid according to model(s) field(s) input constraints (optional/bad/required etc)
+        # filters thru changed data or data that needs to be changed for POST to take effect
         if form.is_valid():
+            
+            # CREATE A (FLAG) BOOLEAN DATA STRUCTURE OR DICTIONARY TO STORE THE 3 USER LEVELS ??
+            # studentstartdate, hiredate
+            # studentkey, certadminkey, instructorkey
+            # (student/certadmin/instructor)
 
             # https://docs.djangoproject.com/en/4.0/ref/forms/api/#django.forms.Form.changed_data
             # store names of altered form fields in a LIST called query_field
+            # TO BE TESTED: suppose the elements in the list are of the same type as the fields.
+            # TO BE TESTED: changed_data returns changed data accordingly to form order
             query_fields = form.changed_data
-            # https://docs.djangoproject.com/en/4.0/topics/db/queries/#making-queries
-            # using ORM chain filters based on altered form fields, considering spanning relationships, 
-            # ie joins, retrieving data using Manager into queryset
-            
-            # RAW SQL to be translated to ORM:
-            # SELECT *
-            # FROM person
-            # (INNER) JOIN logintable ON person.personkey = logintable.personkey
-            # (INNER) JOIN student ON person.personkey = student.personkey
-            # (INNER) JOIN instructor ON person.personkey = instructor.personkey
-            # (INNER) JOIN status ON student.statuskey = status.statuskey
-            # WHERE param1 AND param 2 AND ...
 
-            query_retrieval = Person.objects.select_related().filter().select_related('student')
-            
+            # USE FORM.CLEANED_DATA dictionary, which is given after form.is_valid() == True
+
             # UPDATE: find out if selections are purely of type student or of type instructor and output only
-            # relevant tables
+            # relevant tables... depending on what fields were given, could be as direct as giving studentid or
+            # instructorid or retrieval of results based on User Inputs.. easily return a queryset using vars like
+            # city, lastname, firstname ... can use GTE or LTE to return a range of IDs...
 
-            # from person, find out if id is in student, if so, join table
+            # do i check for the types of users being solicited first or do I retrieve then filter? How efficient
+            # will each method do? (time complexity taken for retrieving additional rows of data compared to checking
+            # subsets of data to be filtered from the start.. latter method is dependent on changed_data, which is 
+            # PROBABLY smaller yet dependent on code logic)
+
+            # iterate through changed_data to find
+            # if (EXCLUSIVE,INDIVIDUAL) either studentkey, certadminkey, instructorkey exists:
+            # store the (key-value) data
+            # (except for statuskey/personkey which is general to all categories, and should be treated as such) 
+            # is given,
+            #    retrieve queryset based SOLELY ON keys and link back to Person and userdetails table
+            # else if personkey/email/phone(?) is stated (which ALSO allows INDIVIDUAL retrieval)
+            #    construct ORM-chained query(filters) based SOLELY ON personkey/email/phone(?)
+            #    but need to state table derivation (ie form.cleaned_data) before stating feature name.
+
+            # if not, that means it's a GROUP retrieval.. 
+            # else if studentstartdate or hiredate is given,
+            # construct queryset that returns results with Persons either student or instructor, 
+            # along with given user inputs from Person table
+
+            # with statuskey, or any other features, ALL THREE GROUPS are POSSIBLE, hence
+            # else
+            #    construct queryset that returns results with Persons that are either student, instructor or certadmin
+
+            # HOW DO I MATCH THE USER INPUT FIELDS with their associated Table name? Model <-> Form
+            # filter(instructor__hiredate='dd/mm/yy').filter(city='Seattle')
+
+
 
             # return output context to same URL? How to return same URL if its a form page prior?
             # review block tags again to see if we can insert some sort of condition? if {{ !form.isbound }} ?
