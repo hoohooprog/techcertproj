@@ -362,10 +362,11 @@ class Status(models.Model):
         managed = False
         db_table = 'status'
 
-
+# https://docs.djangoproject.com/en/4.0/ref/models/fields/#django.db.models.OneToOneField
+# https://docs.djangoproject.com/en/4.0/ref/models/querysets/#select-related
 class Student(models.Model):
     studentkey = models.AutoField(primary_key=True)
-    personkey = models.ForeignKey(Person, models.DO_NOTHING, db_column='personkey', blank=True, null=True)
+    personkey = models.OneToOneField(Person, models.DO_NOTHING,related_name='student', db_column='personkey', blank=True, null=True)
     studentstartdate = models.DateField()
     statuskey = models.ForeignKey(Status, models.DO_NOTHING, db_column='statuskey', blank=True, null=True)
 
