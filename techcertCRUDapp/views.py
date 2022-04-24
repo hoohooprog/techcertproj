@@ -10,6 +10,16 @@ from .models import Person, Student, Roster
 from .forms import PersonForm, AdminQueryForm
 # include for login_auth
 from django.contrib.auth.decorators import login_required
+# for raw sql
+from django.db import connection
+
+def dictfetchall(cursor):
+    "Return all rows from a cursor as a dict"
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
 
 # Create your views here.
 def index(request):
@@ -24,14 +34,24 @@ def logoutmessage(request):
     return render(request, 'techcertCRUDapp/logoutmessage.html')
 
 @login_required
-def person_list(request):
+# pk param name must match param name in url
+def person_list(request,pk):
     
     # get all instances of objects type Person & assign 
     # to person_list query set
-    person_list =Person.objects.all()
+    # assign db connection to var cursor
+    cursor = connection.cursor()
+    # execute SQL statement with cursor
+    cursor.execute("SELECT * FROM person WHERE personkey = %s",[pk])
+
+    # assign dict results into an array called list_of_person
+    list_of_person_details = dictfetchall(cursor)
+
+    # store details in a dict called dict_of_person_details to be rendered in context
+    dict_of_person_details = list_of_person_details[0]
 
     # render person_list.html with context = person_list
-    return render(request, 'techcertCRUDapp/person_list.html', {'person_list': person_list})
+    return render(request, 'techcertCRUDapp/person_list.html', {'person_list': dict_of_person_details})
 
 # returns either form (1st pass) to same page or results from form input params 
 # update-able to using serializer for encoding and transfer of data.
@@ -47,19 +67,24 @@ def admin_person_query_ret(request):
         # if the fields are valid according to model(s) field(s) input constraints (optional/bad/required etc)
         # filters thru changed data or data that needs to be changed for POST to take effect
         if form.is_valid():
-            
+            cursor = connection.cursor()
+
             # CREATE A (FLAG) BOOLEAN DATA STRUCTURE OR DICTIONARY TO STORE THE 3 USER LEVELS ??
             # studentstartdate, hiredate
             # studentkey, certadminkey, instructorkey
             # (student/certadmin/instructor)
+            solo_keys = {'instructorkey':None,'studentkey':None,'certadminkey':None}
+            group_specific_keys = {'hiredate':None, 'studentstartdate':None}
+            found_solo_key = []
 
             # https://docs.djangoproject.com/en/4.0/ref/forms/api/#django.forms.Form.changed_data
             # store names of altered form fields in a LIST called query_field
             # TO BE TESTED: suppose the elements in the list are of the same type as the fields.
-            # TO BE TESTED: changed_data returns changed data accordingly to form order
+            # TO BE TESTED: changed_data[list] returns changed data accordingly to form order
+
             query_fields = form.changed_data
 
-            # USE FORM.CLEANED_DATA dictionary, which is given after form.is_valid() == True
+            # USE FORM.CLEANED_DATA{dictionary}, which is given after form.is_valid() == True
 
             # UPDATE: find out if selections are purely of type student or of type instructor and output only
             # relevant tables... depending on what fields were given, could be as direct as giving studentid or
@@ -71,9 +96,39 @@ def admin_person_query_ret(request):
             # subsets of data to be filtered from the start.. latter method is dependent on changed_data, which is 
             # PROBABLY smaller yet dependent on code logic)
 
-            # iterate through changed_data to find
+            # iterate through changed_data to FIND
             # if (EXCLUSIVE,INDIVIDUAL) either studentkey, certadminkey, instructorkey exists:
-            # store the (key-value) data
+            # store the (key-value) data; possible function instead
+            def getIndividual(query_fields):
+                for i in solo_keys:
+                    if solo_keys[i] in query_fields:
+                        # store key and value into new dict called found_solo_key
+                        # found_solo_key[solo_keys[i]] = form.cleaned_data[solo_keys[i]]
+                        found_solo_key = query_fields[i]
+                
+
+            # use dictionary unpacking to retrieve information of the single entity and store in queryset
+            if found_solo_key == 'studentkey':
+                
+                cursor.execute("SELECT * FROM student INNER JOIN person ON student.personid = person.personid \
+                WHERE studentkey=%s",form.cleaned_data[found_solo_key])
+                student_details = cursor.fetchall()
+
+                # return
+
+            if found_solo_key == 'instructorkey':
+
+                cursor.execute("SELECT * FROM instructor INNER JOIN person ON instructor.personid = person.personid \
+                WHERE instructorkey=%s",form.cleaned_data[found_solo_key])
+                instructor_details = cursor.fetchall()
+
+            if found_solo_key == 'certadminkey':
+
+                cursor.execute("SELECT * FROM certadmin INNER JOIN person ON certadmin.personid = person.personid \
+                WHERE certadminkey=%s",form.cleaned_data[found_solo_key])
+                certadmin_details = cursor.fetchall()
+
+
             # (except for statuskey/personkey which is general to all categories, and should be treated as such) 
             # is given,
             #    retrieve queryset based SOLELY ON keys and link back to Person and userdetails table
@@ -115,25 +170,50 @@ def admin_person_query_ret(request):
 # how would pk be gotten? from user URL?
 def student_profile(request, pk):
 
-    student_profile = Student.objects.pk(pk)
+    # assign db connection to var cursor
+    cursor = connection.cursor()
+    # execute SQL statement with cursor
+    cursor.execute("SELECT * FROM student WHERE studentkey = %s",[pk])
+
+    # assign dict results into an array called list_of_student
+    list_of_student_details = dictfetchall(cursor)
+
+    # store details in a dict called dict_of_person_details to be rendered in context
+    dict_of_student_details = list_of_student_details[0]
 
     # what url will student get after login? ie techcertCRUDapp/student=XYZ/student_profile.html
     # how would we be able to assign such URL after login?
     # can extend or inherit the same html returned by admin query POST request
-    return render(request,'techcertCRUDapp/...', {'student_profile': student_profile})
+    return render(request,'techcertCRUDapp/...', {'student_profile': dict_of_student_details})
 
 # returns an atomized data of admin_query_form, but restricted to individual student and returns directly
 # to the instructor upon URL request
 # how would pk be gotten? from user URL?
-def instructr_profile(request, pk):
+def instructor_profile(request, pk):
+    
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM instructor INNER JOIN person ON instructor.personkey = person.personkey \
+        WHERE personkey=%s",[pk])
+    # assign dict results into an array called list_of_student
+    list_of_instructor_details = dictfetchall(cursor)
 
-    pass
+    # store details in a dict called dict_of_person_details to be rendered in context
+    dict_of_instructor_details = list_of_instructor_details[0]
+
+    return render(request,'techcertCRUDapp/...',{'instructor_profile': dict_of_instructor_details})
 
 @login_required
-def student_list(request):
+def student_list(request,pk):
 
-  student_list = Student.objects.all()
-  return render(request, 'techcertCRUDapp/student_list.html', {'student_list': student_list})
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM student INNER JOIN person ON student.personkey = person.personkey \
+                WHERE studentkey=%s",[pk])
+
+    # list called student_details that retrieves the info that is a tuple in a list
+    # whereas queryset is a list of Student objects
+    student_details = cursor.fetchall()
+    return render(request, 'techcertCRUDapp/student_list.html', {'student_list': student_details})
 
 
 # decorator

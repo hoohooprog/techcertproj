@@ -22,22 +22,22 @@
          a loop in template tag to iterate through dict var Meetings_list using iterator and prints feature details
         of every entity contained in list into table
         -->
-     {% for t in person_list %}
+    
        <tr>
            <!-- syntax for accessing entity features: {{ iterator.featureName }} -->
-           <td>{{ t.personkey }}</td>
-           <td>{{ t.lastname }}</td>
-           <td>{{ t.email }}</td>
-           <td>{{ t.address }}</td>
+           <td>{{ person_list.personkey }}</td>
+           <td>{{ person_list.lastname }}</td>
+           <td>{{ person_list.postalcode }}</td>
+           <td>{{ person_list.address }}</td>
            <td>{{ t.city }}</td>
            <td>{{ t.state }}</td>
-           <td>{{ t.postalcode }}</td>
+           <td>{{ person_list.email }}</td>
            <td>{{ t.phone }}</td>
            <td>{{ t.dateadded }}</td>
            <td>{{ t.newsletter }}</td>
        </tr>
     
-     {% endfor %}
+     
     
     
     </table>
