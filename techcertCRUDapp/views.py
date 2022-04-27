@@ -100,41 +100,92 @@ def admin_person_query_ret(request):
             # if (EXCLUSIVE,INDIVIDUAL) either studentkey, certadminkey, instructorkey exists:
             # store the (key-value) data; possible function instead
             def getIndividual(query_fields):
-                for i in solo_keys:
-                    if solo_keys[i] in query_fields:
-                        # store key and value into new dict called found_solo_key
-                        # found_solo_key[solo_keys[i]] = form.cleaned_data[solo_keys[i]]
-                        found_solo_key = query_fields[i]
+                # in operator iterates thru list..?? loop? n^2?
+                if solo_keys[i] in query_fields:
+                    # store key and value into new dict called found_solo_key
+                    # found_solo_key[solo_keys[i]] = form.cleaned_data[solo_keys[i]]
+                    found_solo_key = query_fields[i]
                 
+            person_exclusive_dict = {'email':None, 'phone':None}
+            entity_types = ['student', 'instructor','certadmin']
+            # hints that entity is a person, any user input in these categories will TECHNICALLY allow us to retrieve
+            # UNIQUE entity info
+            
+            # SINGULAR_CASE_0 personkey, it's a key to other tables, whereas email and phones are exclusively in Person, 
+            # hence needs more handling
+            if 'personkey' in query_fields:
+                person_key_dict['personkey'] = form.cleaned_data['personkey']
 
-            # use dictionary unpacking to retrieve information of the single entity and store in queryset
-            if found_solo_key == 'studentkey':
+                # CASE_0_x
+                # using derived key, we iterate thru possible types of entities: Student, Instructor and Certadmin 
+                # and check to see which one exists and then render the data
+                for i in entity_types:
+                    cursor.execute("SELECT * FROM person INNER JOIN %s ON person.%s = %s.%s WHERE person.%s = %s",\
+                        entity_types[i], 'personkey', entity_types[i], 'personkey', 'personkey',\
+                        person_key_dict['personkey'] )
                 
+                    list_of_person_details = dictfetchall(cursor)
+
+                    if list_of_person_details is not None:
+                        dict_of_person_detals = list_of_person_details[0]
+                        return render(request, 'techcertCRUDapp/...',{'person_profile':dict_of_person_details})
+
+            # SINGULAR_CASE_1 check for email or phone 
+            for i in person_exclusive_dict:
+                if person_exclusive_dict[i] in query_fields:
+                    # populate dict with user detail; consider using dict_key instead, since changed_data is just a list
+                    person_exclusive_dict[i] = form.cleaned_data[form.changed_data[query_fields]]
+
+                    # using derived key, we iterate thru possible types of entities: Student, Instructor and Certadmin 
+                    # and check to see which one exists and then render the data
+                    for i in entity_types:
+                        cursor.execute("SELECT * FROM person INNER JOIN %s ON person.%s = %s.%s WHERE person.%s = %s",\
+                            entity_types[i], person_exclusive_dict.keys(i), entity_types[i], person_exclusive_dict.keys(i), 
+                            person_exclusive_dict.keys(i), person_exclusive_dict[i] )
+
+                        # return details in a list using dictfetchall()
+                        list_of_person_details = dictfetchall(cursor)
+
+
+                        if list_of_person_details is not None:
+                            dict_of_person_details = list_of_person_details[0]
+                            return render(request, 'techcertCRUDapp/...',{'person_profile':dict_of_person_details})
+            
+
+            # SINGULAR_CASE_2 hints that entity is a student
+            if found_solo_key == ['studentkey']:
+                
+                # COULD use dictionary unpacking to retrieve information of the single entity and store in queryset
                 cursor.execute("SELECT * FROM student INNER JOIN person ON student.personid = person.personid \
                 WHERE studentkey=%s",form.cleaned_data[found_solo_key])
-                student_details = cursor.fetchall()
+                list_of_student_details = dictfetchall(cursor)
+                dict_of_student_details = list_of_student_details[0]
 
-                # return
+                return render(request,'techcertCRUDapp/...',{'student_profile':dict_of_student_details})
 
+            # SINGULAR_CASE_3 hints that entity is an instructor
             if found_solo_key == 'instructorkey':
 
                 cursor.execute("SELECT * FROM instructor INNER JOIN person ON instructor.personid = person.personid \
                 WHERE instructorkey=%s",form.cleaned_data[found_solo_key])
-                instructor_details = cursor.fetchall()
 
+                # assign dict results into an array called list_of_student
+                list_of_instructor_details = dictfetchall(cursor)
+
+                # store details in a dict called dict_of_person_details to be rendered in context
+                dict_of_instructor_details = list_of_instructor_details[0]
+
+                return render(request,'techcertCRUDapp/...',{'instructor_profile': dict_of_instructor_details})
+
+            # SINGULAR_CASE_4 hints that entity is a certadmin
             if found_solo_key == 'certadminkey':
 
                 cursor.execute("SELECT * FROM certadmin INNER JOIN person ON certadmin.personid = person.personid \
                 WHERE certadminkey=%s",form.cleaned_data[found_solo_key])
-                certadmin_details = cursor.fetchall()
+                list_of_certadmin_details = dictfetchall(cursor)
+                dict_of_certadmin_details = list_of_certadmin_details[0]
 
-
-            # (except for statuskey/personkey which is general to all categories, and should be treated as such) 
-            # is given,
-            #    retrieve queryset based SOLELY ON keys and link back to Person and userdetails table
-            # else if personkey/email/phone(?) is stated (which ALSO allows INDIVIDUAL retrieval)
-            #    construct ORM-chained query(filters) based SOLELY ON personkey/email/phone(?)
-            #    but need to state table derivation (ie form.cleaned_data) before stating feature name.
+                return render(request, 'techcertCRUDapp/...',{'certadmin_profile': dict_of_certadmin_details})
 
             # if not, that means it's a GROUP retrieval.. 
             # else if studentstartdate or hiredate is given,
@@ -147,6 +198,37 @@ def admin_person_query_ret(request):
 
             # HOW DO I MATCH THE USER INPUT FIELDS with their associated Table name? Model <-> Form
             # filter(instructor__hiredate='dd/mm/yy').filter(city='Seattle')
+            
+            ###################################################################
+            #
+            # straight up write the sql to retrieve list of results and render?
+            # (?consequences?)
+            ###################################################################
+            ## solely studentstartdate and more might mean > 1 student
+            ## solely hiredate and more might mean > 1 instructor
+            ## studentstartdate and hiredate means both instructor and student possibilites 
+            ### (? is such output ideal for school admins to have 2 or more users? Why would they do that ? how could results be 
+            ###  rendered ?)
+            ## any other fields might indicate all 3 users, even though certadmin is far unlikely for some fields
+
+            # using form.cleaned_data dictionary and form.changed_data list to query sql, dictfetchall(cursor) into list and store
+            # into dict to be rendered
+
+            # if changed_data in ['postalcode','state','statuskey','lastname',firstname','address','city]
+            #    create chain of filter kwargs 
+            #    eg https://stackoverflow.com/questions/1227091/how-to-dynamically-provide-lookup-field-name-in-django-query?noredirect=1&lq=1
+            #    eg https://stackoverflow.com/questions/310732/in-django-how-does-one-filter-a-queryset-with-dynamic-field-lookups
+            # 
+            # if changed_data contain student field
+            #    lengthen filter kwargs
+            # if changed_data contain instructor field
+            #    lengthen filter kwargs
+
+            # query using sql or ORM and render
+
+                return render(request, 'techcertCRUDapp/...',{'certadmin_profile': dict_of_certadmin_details})
+
+
 
 
 
