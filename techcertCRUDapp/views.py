@@ -218,18 +218,31 @@ def admin_person_query_ret(request):
             #    create chain of filter kwargs 
             #    eg https://stackoverflow.com/questions/1227091/how-to-dynamically-provide-lookup-field-name-in-django-query?noredirect=1&lq=1
             #    eg https://stackoverflow.com/questions/310732/in-django-how-does-one-filter-a-queryset-with-dynamic-field-lookups
-            # 
-            # if changed_data contain student field
-            #    lengthen filter kwargs
-            # if changed_data contain instructor field
-            #    lengthen filter kwargs
-
+            person_fields = ['lastname','firstname','state','statuskey','city','postalcode']
+            non_person_fields = {'student':'studentstartdate','instructor':'hiredate'}
+            kwargs = {}
+            for data in form.changed_data:
+                if data in person_fields:
+                    # add key and value into kwargs dict
+                    kwargs['{0}'.format(form.cleaned_data[form.changed_data])]= form.cleaned_data[form.changed_data]
+                    # remove value so 1 less check
+                    person_fields.remove(data)
+                    
+                # if changed_data contain student field (studentstartdate)
+                # lengthen filter kwargs
+                if len(non_person_fields) == 2:
+                    if data == non_person_fields['student']:
+                        kwargs['{0}__{1}'.format('student',form.changed_data)] = form.cleaned_data[form.changed_data]
+                        non_person_fields.pop('student')
+                    # if changed_data contain instructor field (hiredate)
+                    # lengthen filter kwargs
+                    elif data  == non_person_fields['instructor']:
+                        kwargs['{0}__{1}'.format('instructor', form.changed_data)] = form.cleaned_data[form.changed_data]
+                        non_person_fields.pop('instructor')
+            
             # query using sql or ORM and render
-
-                return render(request, 'techcertCRUDapp/...',{'certadmin_profile': dict_of_certadmin_details})
-
-
-
+            return_general_query = Person.objects.filter(**kwargs)
+            return render(request, 'techcertCRUDapp/...',{'general_profiles': return_general_query})
 
 
             # return output context to same URL? How to return same URL if its a form page prior?
