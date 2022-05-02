@@ -21,6 +21,15 @@ def dictfetchall(cursor):
         for row in cursor.fetchall()
     ]
 
+def getIndividual(solo_keys, form):
+    # in operator iterates thru list..?? loop? n^2?
+    for k in solo_keys:
+        if k in form.changed_data:
+            # store key and value into new dict called found_solo_key
+            # found_solo_key[solo_keys[i]] = form.cleaned_data[solo_keys[i]]
+            found_solo_key = form.changed_data[k]
+            return found_solo_key
+
 # Create your views here.
 def index(request):
 
@@ -56,6 +65,7 @@ def person_list(request,pk):
 # returns either form (1st pass) to same page or results from form input params 
 # update-able to using serializer for encoding and transfer of data.
 @login_required
+# @permission_required(raise_exception=True)
 def admin_person_query_ret(request):
 
     # check if request.method == 'POST',
@@ -73,7 +83,7 @@ def admin_person_query_ret(request):
             # studentstartdate, hiredate
             # studentkey, certadminkey, instructorkey
             # (student/certadmin/instructor)
-            solo_keys = {'instructorkey':None,'studentkey':None,'certadminkey':None}
+            solo_keys = ['instructorkey','studentkey','certadminkey']
             group_specific_keys = {'hiredate':None, 'studentstartdate':None}
             found_solo_key = []
 
@@ -81,8 +91,6 @@ def admin_person_query_ret(request):
             # store names of altered form fields in a LIST called query_field
             # TO BE TESTED: suppose the elements in the list are of the same type as the fields.
             # TO BE TESTED: changed_data[list] returns changed data accordingly to form order
-
-            query_fields = form.changed_data
 
             # USE FORM.CLEANED_DATA{dictionary}, which is given after form.is_valid() == True
 
@@ -99,22 +107,19 @@ def admin_person_query_ret(request):
             # iterate through changed_data to FIND
             # if (EXCLUSIVE,INDIVIDUAL) either studentkey, certadminkey, instructorkey exists:
             # store the (key-value) data; possible function instead
-            def getIndividual(query_fields):
-                # in operator iterates thru list..?? loop? n^2?
-                if solo_keys[i] in query_fields:
-                    # store key and value into new dict called found_solo_key
-                    # found_solo_key[solo_keys[i]] = form.cleaned_data[solo_keys[i]]
-                    found_solo_key = query_fields[i]
+
                 
             person_exclusive_dict = {'email':None, 'phone':None}
             entity_types = ['student', 'instructor','certadmin']
             # hints that entity is a person, any user input in these categories will TECHNICALLY allow us to retrieve
             # UNIQUE entity info
+            found_solo_key = getIndividual(solo_keys,form)
             
             # SINGULAR_CASE_0 personkey, it's a key to other tables, whereas email and phones are exclusively in Person, 
             # hence needs more handling
-            if 'personkey' in query_fields:
-                person_key_dict['personkey'] = form.cleaned_data['personkey']
+            if found_solo_key == 'personkey':
+                person_key_dict={}
+                person_key_dict['personkey'] = form.cleaned_data[found_solo_key]
 
                 # CASE_0_x
                 # using derived key, we iterate thru possible types of entities: Student, Instructor and Certadmin 
@@ -127,14 +132,14 @@ def admin_person_query_ret(request):
                     list_of_person_details = dictfetchall(cursor)
 
                     if list_of_person_details is not None:
-                        dict_of_person_detals = list_of_person_details[0]
+                        dict_of_person_details = {list_of_person_details[0]}
                         return render(request, 'techcertCRUDapp/...',{'person_profile':dict_of_person_details})
 
             # SINGULAR_CASE_1 check for email or phone 
-            for i in person_exclusive_dict:
-                if person_exclusive_dict[i] in query_fields:
+            for i in person_exclusive_dict.keys():
+                if i in form.changed_data:
                     # populate dict with user detail; consider using dict_key instead, since changed_data is just a list
-                    person_exclusive_dict[i] = form.cleaned_data[form.changed_data[query_fields]]
+                    person_exclusive_dict[i] = form.cleaned_data[form.changed_data[person_exclusive_dict[i]]]
 
                     # using derived key, we iterate thru possible types of entities: Student, Instructor and Certadmin 
                     # and check to see which one exists and then render the data
@@ -148,20 +153,21 @@ def admin_person_query_ret(request):
 
 
                         if list_of_person_details is not None:
-                            dict_of_person_details = list_of_person_details[0]
-                            return render(request, 'techcertCRUDapp/...',{'person_profile':dict_of_person_details})
+                            dict_of_person_details = {}
+                            dict_of_person_details['person_profile'] = list_of_person_details[0]
+                            return render(request, 'techcertCRUDapp/...',context=dict_of_person_details)
             
 
             # SINGULAR_CASE_2 hints that entity is a student
-            if found_solo_key == ['studentkey']:
+            if found_solo_key == 'studentkey':
                 
                 # COULD use dictionary unpacking to retrieve information of the single entity and store in queryset
                 cursor.execute("SELECT * FROM student INNER JOIN person ON student.personid = person.personid \
                 WHERE studentkey=%s",form.cleaned_data[found_solo_key])
                 list_of_student_details = dictfetchall(cursor)
-                dict_of_student_details = list_of_student_details[0]
+                dict_of_student_details = {list_of_student_details[0]}
 
-                return render(request,'techcertCRUDapp/...',{'student_profile':dict_of_student_details})
+                return render(request,'techcertCRUDapp/...',{'person_profile':dict_of_student_details})
 
             # SINGULAR_CASE_3 hints that entity is an instructor
             if found_solo_key == 'instructorkey':
@@ -173,9 +179,10 @@ def admin_person_query_ret(request):
                 list_of_instructor_details = dictfetchall(cursor)
 
                 # store details in a dict called dict_of_person_details to be rendered in context
-                dict_of_instructor_details = list_of_instructor_details[0]
+                dict_of_instructor_details = {}
+                dict_of_instructor_details['person_profile'] = list_of_instructor_details[0]
 
-                return render(request,'techcertCRUDapp/...',{'instructor_profile': dict_of_instructor_details})
+                return render(request,'techcertCRUDapp/...',context = dict_of_instructor_details)
 
             # SINGULAR_CASE_4 hints that entity is a certadmin
             if found_solo_key == 'certadminkey':
@@ -183,9 +190,10 @@ def admin_person_query_ret(request):
                 cursor.execute("SELECT * FROM certadmin INNER JOIN person ON certadmin.personid = person.personid \
                 WHERE certadminkey=%s",form.cleaned_data[found_solo_key])
                 list_of_certadmin_details = dictfetchall(cursor)
-                dict_of_certadmin_details = list_of_certadmin_details[0]
+                dict_of_certadmin_details = {}
+                dict_of_certadmin_details['person_profile'] = list_of_certadmin_details[0]
 
-                return render(request, 'techcertCRUDapp/...',{'certadmin_profile': dict_of_certadmin_details})
+                return render(request, 'techcertCRUDapp/...',context = dict_of_certadmin_details)
 
             # if not, that means it's a GROUP retrieval.. 
             # else if studentstartdate or hiredate is given,
@@ -196,9 +204,6 @@ def admin_person_query_ret(request):
             # else
             #    construct queryset that returns results with Persons that are either student, instructor or certadmin
 
-            # HOW DO I MATCH THE USER INPUT FIELDS with their associated Table name? Model <-> Form
-            # filter(instructor__hiredate='dd/mm/yy').filter(city='Seattle')
-            
             ###################################################################
             #
             # straight up write the sql to retrieve list of results and render?
@@ -251,7 +256,7 @@ def admin_person_query_ret(request):
             # https://developer.mozilla.org/en-US/docs/Learn/Forms/Sending_and_retrieving_form_data#on_the_client_side_defining_how_to_send_the_data
             # https://stackoverflow.com/questions/14837312/django-taking-input-and-showing-output-in-the-same-page
             # return render(request, 'techcertCRUDapp/admin_query_form.html',{'query_results': query_results})
-            pass
+            
         else:
             form = AdminQueryForm()
             return render(request, 'admin_query_form.html',{'form':form})
