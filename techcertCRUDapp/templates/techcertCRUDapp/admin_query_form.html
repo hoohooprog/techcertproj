@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Add Product</h2>
+{% if form %}
+<form method='POST' class="post-form">
+<table class='table'>
+    
+        {% csrf_token %}
+        {{ form }}
+    
+
+</table>
+<button type="submit" class="save btn btn-default">
+    Save
+</button>
+</form>
+{% endif %}
+
+{% if form_submission is success and if  'studentkey' in dict of dict of details  }
+{% block content %}
+{% for fields in combined_models_fields_student %}
+<p>{{question}}</p>
+{% endfor %}
+{% endblock %}
+
+{if form_submission is success and user queries instructor(s) info}
+{% block content %}
+{% for fields in combined_models_fields_instructor %}
+<p>{{fields}}</p>
+{% endfor %} 
+{% endblock %} 
+
+{% endblock %}
+
+
+
